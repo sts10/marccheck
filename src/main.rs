@@ -23,6 +23,12 @@ fn main() {
                     poorly_dated_records.push(parsed_record);
                 }
             }
+            (Some(a), _, Some(b)) => {
+                if two_years_not_the_same(&a, &b) {
+                    println!("{} != {}", a, b);
+                    poorly_dated_records.push(parsed_record);
+                }
+            }
             _ => (),
         }
     }
