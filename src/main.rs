@@ -5,7 +5,7 @@ use marccheck::*;
 fn main() {
     // let raw_records = make_raw_records("./test-data/test_10.mrc");
     let raw_records: Vec<Vec<char>> = make_raw_records("./bench-data/Books.All.2016.part01.utf8");
-    println!("Found {} raw_records.", raw_records.len());
+    println!("Found {} raw_records. Parsing...", raw_records.len());
     let mut poorly_dated_records = vec![];
     for raw_record in raw_records {
         let parsed_record: Record = parse_raw_record(raw_record.to_vec());
@@ -25,6 +25,7 @@ fn main() {
             _ => (),
         }
     }
+    println!("Found {} raw_records.", raw_records.len());
     println!("Found {} poorly dated records!", poorly_dated_records.len());
 }
 
