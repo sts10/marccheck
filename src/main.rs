@@ -5,7 +5,8 @@ use marccheck::*;
 fn main() {
     // let raw_records = make_raw_records("./test-data/test_10.mrc");
     let raw_records: Vec<Vec<char>> = make_raw_records("./bench-data/Books.All.2016.part01.utf8");
-    println!("Found {} raw_records. Parsing...", raw_records.len());
+    let raw_records_found = raw_records.len();
+    println!("Found {} raw_records. Parsing...", raw_records_found);
     let mut poorly_dated_records = vec![];
     for raw_record in raw_records {
         let parsed_record: Record = parse_raw_record(raw_record.to_vec());
@@ -25,8 +26,11 @@ fn main() {
             _ => (),
         }
     }
-    println!("Found {} raw_records.", raw_records.len());
-    println!("Found {} poorly dated records!", poorly_dated_records.len());
+    println!("Found {} raw_records.", raw_records_found);
+    println!(
+        "Found {} records with mismatched publication years!",
+        poorly_dated_records.len()
+    );
 }
 
 fn two_years_not_the_same(a: &str, b: &str) -> bool {
