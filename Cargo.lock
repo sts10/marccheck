@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "marc-check"
+name = "marccheck"
 version = "0.1.0"
