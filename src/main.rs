@@ -6,48 +6,46 @@ fn main() {
     // let raw_records = make_raw_records("./test-data/test_10.mrc");
     let raw_records: Vec<Vec<char>> = make_raw_records("./bench-data/Books.All.2016.part01.utf8");
     println!("Found {} raw_records.", raw_records.len());
+    let mut poorly_dated_records = vec![];
     for raw_record in raw_records {
         let parsed_record: Record = parse_raw_record(raw_record.to_vec());
 
-        let mut pub_year_008 = "".to_string();
-        let mut pub_year_260_or_264 = "".to_string();
-        for field in parsed_record.fields {
-            if field.tag == "008" {
-                // since we know this the is 008 field, we know it will have a value, so we can
-                // safely unwrap here.
-                let field_value = field.value.unwrap();
-                // https://www.oclc.org/bibformats/en/fixedfield/dtst.html
-                // https://www.oclc.org/bibformats/en/fixedfield/dates.html
-                // https://www.oclc.org/bibformats/en/2xx/264.html
-                pub_year_008 = if field_value.chars().nth(8).unwrap() == 's' {
-                    (field_value[9..13]).to_string()
-                } else {
-                    (field_value[8..12]).to_string()
-                };
-            } else if field.tag == "260" || field.tag == "264" {
-                // We know this is Data Field, since it's 260, so we can unwrap
-                pub_year_260_or_264 = if field.sub_fields.clone().unwrap().contains_key(&'c') {
-                    field.sub_fields.unwrap()[&'c'].clone()
-                } else {
-                    "".to_string() // we'll make this variable an Option later
-                };
+        let pub_year_008 = get_year_from_008(&parsed_record);
+        let pub_year_260 = get_year_from_a_data_field(&parsed_record, "260");
+        let pub_year_264 = get_year_from_a_data_field(&parsed_record, "264");
+
+        match (pub_year_008, pub_year_260, pub_year_264) {
+            (None, None, None) => (),
+            (Some(a), Some(b), _) => {
+                if two_years_not_the_same(&a, &b) {
+                    println!("{} != {}", a, b);
+                    poorly_dated_records.push(parsed_record);
+                }
             }
-        }
-        if pub_year_008 != "" && pub_year_260_or_264 != "" && pub_year_008 != pub_year_260_or_264 {
-            // Now check for weird edge case (string formatting?)
-            if pub_year_008.parse::<usize>().is_ok()
-                && pub_year_260_or_264.parse::<usize>().is_ok()
-                && pub_year_008.parse::<usize>() == pub_year_260_or_264.parse::<usize>()
-            {
-                println!(
-                    "Found messy record! ({} != {}). Leader is {}",
-                    pub_year_008,
-                    pub_year_260_or_264,
-                    parsed_record.leader.iter().collect::<String>()
-                );
-            }
-        } else {
-            // println!("{} == {}", pub_year_008, pub_year_260_or_264);
+            _ => (),
         }
     }
+    println!("Found {} poorly dated records!", poorly_dated_records.len());
+}
+
+fn two_years_not_the_same(a: &str, b: &str) -> bool {
+    !clean_year(&b).contains(&clean_year(&a))
+        && !&a.contains("?")
+        && !&b.contains("?")
+        && clean_year(&a).len() > 0
+        && clean_year(&b).len() > 0
+}
+
+fn clean_year(year: &str) -> String {
+    // clean_year.replace(".", "").replace("c", "")
+    year.chars().filter(|c| c.is_ascii_digit()).collect()
+}
+
+fn get_year_estimate(year: &str) -> String {
+    year.to_string()
+        .replace(".", "")
+        .replace("c", "")
+        .replace("[", "")
+        .replace("]", "")[0..4]
+        .to_string()
 }

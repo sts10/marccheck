@@ -36,6 +36,39 @@ pub struct Field {
     pub sub_fields: Option<HashMap<char, String>>, // for Data fields
 }
 
+pub fn get_year_from_008(parsed_record: &Record) -> Option<String> {
+    for field in &parsed_record.fields {
+        if field.tag == "008" {
+            // since we know this the is 008 field, we know it will have a value, so we can
+            // safely unwrap here.
+            let field_value = field.value.as_ref().unwrap();
+            // https://www.oclc.org/bibformats/en/fixedfield/dtst.html
+            // https://www.oclc.org/bibformats/en/fixedfield/dates.html
+            // https://www.oclc.org/bibformats/en/2xx/264.html
+            let pub_year_008 = if field_value.chars().nth(8).unwrap() == 's' {
+                Some((field_value[9..13]).to_string())
+            } else {
+                None
+            };
+            return pub_year_008;
+        }
+    }
+    None
+}
+
+pub fn get_year_from_a_data_field(parsed_record: &Record, given_tag: &str) -> Option<String> {
+    for field in &parsed_record.fields {
+        if field.tag == given_tag {
+            if field.sub_fields.clone().unwrap().contains_key(&'c') {
+                return Some(field.sub_fields.as_ref().unwrap()[&'c'].clone());
+            } else {
+                return None;
+            }
+        }
+    }
+    None
+}
+
 pub fn parse_raw_record(raw_record: Vec<char>) -> Record {
     let mut fields: Vec<Field> = vec![];
 
@@ -53,8 +86,6 @@ pub fn parse_raw_record(raw_record: Vec<char>) -> Record {
     let starting_character_position_offset = directory_size + 24;
     let leader: &Vec<char> = &raw_record[0..24].to_vec(); // inefficient?
     assert!(leader.len() == 24);
-
-    let mut print_start_of_next_record = false;
 
     for raw_directory_entry in raw_record[24..raw_record.len()].chunks_exact(12) {
         if raw_directory_entry.contains(&(0x1e as char)) {
