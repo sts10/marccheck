@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
+use std::path::PathBuf;
 
 // The Directory immediately follows the Leader at the beginning
 // of the record and is located at character position 24.
@@ -197,7 +198,7 @@ pub fn parse_raw_record(raw_record: Vec<char>) -> Record {
 
 /// Delimiting on `0x1d as char`, chunk out individual records
 /// as Vector of characters
-pub fn make_raw_records(file_name: &str) -> Vec<Vec<char>> {
+pub fn make_raw_records(file_name: PathBuf) -> Vec<Vec<char>> {
     // let chars = read_string_from_file_to_vector("./my-data/test_10.mrc").unwrap();
     let chars = read_string_from_file_to_vector(file_name).unwrap();
     let mut records: Vec<Vec<char>> = vec![vec![]]; // not sure if this initalization is corrent.
@@ -234,18 +235,16 @@ fn chop_record_using_chars(
             raw_field.push(*ch);
         }
     }
-    // raw_field.iter().collect::<String>()
     raw_field
 }
 
 /// Reads a text file into a Vector of `char`s (characters)
-pub fn read_string_from_file_to_vector(file_path: &str) -> io::Result<Vec<char>> {
-    let mut f = File::open(file_path.trim_matches(|c| c == '\'' || c == ' '))?;
+pub fn read_string_from_file_to_vector(file_path: PathBuf) -> io::Result<Vec<char>> {
+    let mut f = File::open(file_path)?;
     let mut string_from_file = String::new();
     f.read_to_string(&mut string_from_file)
         .expect("something went wrong reading the file");
 
-    // println!("String: {}", string_from_file);
     let mut vector_of_chars = Vec::new();
     for c in string_from_file.chars() {
         // print!("{}", c);
